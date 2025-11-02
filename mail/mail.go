@@ -8,6 +8,8 @@ import (
 	"net/smtp"
 	"net/textproto"
 	"strconv"
+	"crypto/tls"
+	"os"
 )
 
 type RawInput struct {
@@ -80,7 +82,12 @@ func ProcessMessage(message *babashka.Message) {
 					return
 				}
 			}
-			err = e.Send(addr, auth)
+			debug := os.Getenv("POD_TZZH_MAIL_UNSAFE_STARTTSL")
+			if debug != "true" {
+				err = e.Send(addr, auth)
+			} else {
+				err = e.SendWithStartTLS(addr, auth, &tls.Config{InsecureSkipVerify: true})
+			}
 			if err != nil {
 				babashka.WriteErrorResponse(message, err)
 				return
